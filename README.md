@@ -17,3 +17,4 @@ Hardware requirements:
 
 tested on a Solis hybrid inverter with a 200VDC battery (18650's based)
 
+This project is still a work in progress so be careful !
