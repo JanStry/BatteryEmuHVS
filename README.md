@@ -1,6 +1,7 @@
 # BatteryEmuHVS
 This software provides a bridge between a custom made battery and a high voltage solar inverter using the BYD HVS protocol
 
+This project is still a work in progress so be careful !
 
 
 Hardware requirements:
