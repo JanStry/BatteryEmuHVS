@@ -11,11 +11,11 @@ void updateCANData() {
     CANData110[2] = uint16dischargevolts>>8;
     CANData110[3] = uint16dischargevolts;
 // BATTERY DISCHARGE LIMIT: 0.1A, 16 bit SIGNED int
-    uint16_t uint16dischargeLimit = DischargeCurrentLimit*10;  // //Maximum discharge power allowed (Unit: A+1)
+    uint16_t uint16dischargeLimit = DischargeCurrentLimit;  // //Maximum discharge power allowed (Unit: A+1)
     CANData110[4] = uint16dischargeLimit>>8;       
     CANData110[5] = uint16dischargeLimit; 
 // BATTERY CHARGE LIMIT: 0.1A, 16 bit SIGNED int
-    uint16_t uint16currentLimit = ChargeCurrentLimit*10;   //Maximum discharge power allowed (Unit: A+1)
+    uint16_t uint16currentLimit = ChargeCurrentLimit;   //Maximum discharge power allowed (Unit: A+1)
     CANData110[6] = uint16currentLimit>>8;       
     CANData110[7] = uint16currentLimit; 
 // //SOC (100.00%)

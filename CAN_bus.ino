@@ -17,8 +17,10 @@ void CAN2S()
     memset(0x110, 0, 8);
       if(sndStat == CAN_OK){
       Serial.println("Message Sent Successfully!");
+      digitalWrite(4, HIGH);
       } else {
       Serial.println("Error Sending Message...");
+      //digitalWrite(4, HIGH);
       if(CanError <= 100){
         CanError ++;
        }

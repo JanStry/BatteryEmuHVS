@@ -36,7 +36,7 @@ long unsigned int SolisReq = 0x151; //inverter request id
 unsigned char len = 0;  //received message lenght
 unsigned char rxBuf[8];
 char msgString[128];                        // Array to store serial string
-//CAN DEFFINITION
+//CAN DEFINITION
 #define CAN0_INT 2                              // Set INT to pin 2
 MCP_CAN CAN0(10);                               // Set CS to pin 10
 
@@ -45,7 +45,7 @@ MCP_CAN CAN0(10);                               // Set CS to pin 10
 #define TXenable 3          //TXenable pin 
 // data array for modbus network sharing
 uint16_t au16data[16]  = {
-  0, 0, 0, 5, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 //MODBUS DEFINITIONS
 AltSoftSerial altSerial;
 Modbus slave(slaveID,altSerial,TXenable); // SoftSerial port + pin3 for TX enable
@@ -55,8 +55,10 @@ SandTimer timer_2s;
 SandTimer timer_10s;
 SandTimer timer_60s;
 //INT
-int INITIALMSG = 1;                        //INITIAL MESSAGE MARKER. //always 0 in run. used for debug
-int CanError = 0;
+int MODUS = 0;                        // Emulator modus. //always 0 in run. 1 used for debug
+int CanError = 0;                          // CAN Error counter
+int RELAY = 0;                             // RELAY
+int MODESET = 0;
 // Global battery stat variables 
 //float CellMax = 5;                 // Default value > max possible cell votlage
 //float CellMin = 0; 
@@ -85,6 +87,8 @@ void setup()
 {
   Serial.begin(9600);
   altSerial.begin(9600);
+  pinMode(4, OUTPUT);   //Can LED act
+  pinMode(5, OUTPUT);   //RELAY
 
   slave.start();  //start modbus 
   
@@ -104,7 +108,7 @@ void setup()
 void loop()
 {
 
-  if(INITIALMSG == 0){
+  if(MODUS == 0){
     if(!digitalRead(CAN0_INT))                  // If CAN0_INT pin is low, read receive buffer
     {
      CAN0.readMsgBuf(&rxId, &len, rxBuf);      // Read data: len = data length, buf = data byte(s)
@@ -115,7 +119,7 @@ void loop()
         sprintf(msgString, "Standard ID: 0x%.3lX       DLC: %1d  Data:", rxId, len);
         if(rxId == SolisReq){
           Serial.println("Inverter request received");
-          INITIALMSG = 1;
+          MODUS = 1;   //if request message was received go to normal mode 2
         }
       Serial.print(msgString);
   
@@ -132,7 +136,7 @@ void loop()
       Serial.println();
     }
   }
-  if(INITIALMSG == 1)
+  if(MODUS == 1)
   {
   
     Serial.println("Enter send mode");
@@ -172,13 +176,14 @@ void loop()
     //memset(0x3D0, 0, 8);
       if(sndStat == CAN_OK){
       Serial.println("Message Sent Successfully!");
+      digitalWrite(4, HIGH);
       } else {
       Serial.println("Error Sending Message...");
       }
-    INITIALMSG = 2;
+    MODUS = 2;  //if initial message was sent go to normal mode 2
     delay(50);
   }
-  if(INITIALMSG == 2)
+  if(MODUS == 2)
   {
    //Serial.println("");
    timer_2s.start(1900);     //start timer 2sec
@@ -189,7 +194,7 @@ void loop()
    {
     //Serial.println("timer 2s finished");
     Serial.print("SoC: ");
-    Serial.print(SOC);
+    Serial.print(SOC/10);
     Serial.print("   Volts: ");
     Serial.print(PackVoltagef,1);
     Serial.print("   Current: ");
@@ -220,11 +225,29 @@ void loop()
   }
   averageValue.push(analogRead(A0));
   delay(5);
-  rawmeasurement =  map(averageValue.average(), 0, 1023, -28000, 28000);   //ACS Calibration
+  rawmeasurement =  map(averageValue.average(), 0, 1023, -28000, 28030);   //ACS Calibration
   //Serial.println(PackCurrentf/1000);
   //PackCurrentf = (rawmeasurement/1000);
 
   modbus();
+  digitalWrite(4, LOW);     //CAN LED ACT
+
+  if(RELAY == 1){             //main relay control
+    digitalWrite(5, HIGH);
+    } else { digitalWrite(5, LOW);}
+
+  if(MODESET == 1){             //control emulator modus
+    MODUS = 3;                  //stop CAN communication - sleepmode
+    delay(100);
+    Serial.println("CAN-SLEEP");
+    }
+  if(MODESET == 2){             //control emulator modus
+    MODUS = 0;                  //restart CAN communication
+    au16data[11] = 0;           //write modbus register 11 to restart
+    Serial.println("RESTARTING");
+    delay(100);
+    }
+
 }
 
 
